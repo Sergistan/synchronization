@@ -1,18 +1,16 @@
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 
 public class Main {
 
     public static final Map<Integer, Integer> sizeToFreq = new HashMap<>();
-    private static final int countsOfThread = 100;
+    private static final int countsOfThread = 1000;
 
     public static void main(String[] args) {
 
         for (int i = 0; i < countsOfThread; i++) {
             new Thread(() -> {
                 synchronized (sizeToFreq) {
-                    String route = generateRoute("RLRFR", 100);;
+                    String route = generateRoute("RLRFR", 100);
                     int charCount = 0;
                     char temp;
 
@@ -29,28 +27,24 @@ public class Main {
                         Integer integer = sizeToFreq.get(charCount);
                         sizeToFreq.put(charCount, ++integer);
                     }
-
                 }
             }).start();
         }
 
-        int maxRepeat = 0;
-        int maxFreq = 0;
-
+        Integer maxValueInMap = Collections.max(sizeToFreq.values());
         for (Map.Entry<Integer, Integer> entry : sizeToFreq.entrySet()) {
-            if (entry.getValue() > maxFreq) {
-                maxRepeat = entry.getKey();
-                maxFreq = entry.getValue();
+            if (entry.getValue() == maxValueInMap) {
+                Integer key = entry.getKey();
+                System.out.println("Самое частое количество повторений: " + key + " (встретилось " + maxValueInMap + " раз)");
             }
         }
-        System.out.println("Самое частое количество повторений: " + maxRepeat + " (встретилось " + maxFreq + " раз)");
 
         System.out.println("Другие размеры:");
         sizeToFreq.forEach(
                 (key, value)
                         -> System.out.println("-" + key + " (" + value + " раз(а))"));
-    }
 
+    }
     public static String generateRoute(String letters, int length) {
         Random random = new Random();
         StringBuilder route = new StringBuilder();

@@ -9,7 +9,8 @@ public class Main {
     public static void main(String[] args) throws InterruptedException {
 
         for (int i = 0; i < countsOfThread; i++) {
-                new Thread(() -> {
+            new Thread(() -> {
+                synchronized (sizeToFreq) {
                     String route = generateRoute("RLRFR", 100);
                     int charCount = 0;
                     char temp;
@@ -20,16 +21,15 @@ public class Main {
                         if (temp == 'R')
                             charCount++;
                     }
-                    synchronized (sizeToFreq) {
-                        if (!sizeToFreq.containsKey(charCount)) {
-                            sizeToFreq.put(charCount, 1);
-                        } else {
-                            Integer integer = sizeToFreq.get(charCount);
-                            sizeToFreq.put(charCount, ++integer);
-                        }
-                        sizeToFreq.notify();
+                    if (!sizeToFreq.containsKey(charCount)) {
+                        sizeToFreq.put(charCount, 1);
+                    } else {
+                        Integer integer = sizeToFreq.get(charCount);
+                        sizeToFreq.put(charCount, ++integer);
                     }
-                }).start();
+                    sizeToFreq.notify();
+                }
+            }).start();
         }
 
         for (int i = 0; i < sizeToFreq.size(); i++) {
@@ -45,7 +45,6 @@ public class Main {
                             }
                         }
                     }
-
                 });
                 thread.start();
                 threads.add(thread);
@@ -58,6 +57,7 @@ public class Main {
         }
 
     }
+
     public static String generateRoute(String letters, int length) {
         Random random = new Random();
         StringBuilder route = new StringBuilder();

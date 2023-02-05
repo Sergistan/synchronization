@@ -1,61 +1,42 @@
 import java.util.*;
 
 public class Main {
-
+    final static String LETTERS = "RLRFR";
+    final static int ROUTE_LENGTH = 100;
+    final static int AMOUNT_OF_THREADS = 1000;
     public static final Map<Integer, Integer> sizeToFreq = new HashMap<>();
-    private static final int countsOfThread = 10;
-    private static final List<Thread> threads = new ArrayList<>();
 
     public static void main(String[] args) throws InterruptedException {
+        List<Thread> threadList = new ArrayList<>();
 
-        for (int i = 0; i < countsOfThread; i++) {
-            new Thread(() -> {
+        Thread printer = new Thread(() -> {
+            while (!Thread.interrupted()) {
                 synchronized (sizeToFreq) {
-                    String route = generateRoute("RLRFR", 100);
-                    int charCount = 0;
-                    char temp;
-
-                    for (int j = 0; j < route.length(); j++) {
-                        temp = route.charAt(j);
-
-                        if (temp == 'R')
-                            charCount++;
+                    try {
+                        sizeToFreq.wait();
+                    } catch (InterruptedException e) {
+                        return;
                     }
-                    if (!sizeToFreq.containsKey(charCount)) {
-                        sizeToFreq.put(charCount, 1);
-                    } else {
-                        Integer integer = sizeToFreq.get(charCount);
-                        sizeToFreq.put(charCount, ++integer);
-                    }
-                    sizeToFreq.notify();
+                    printLeader();
                 }
-            }).start();
-        }
-
-        for (int i = 0; i < sizeToFreq.size(); i++) {
-            synchronized (sizeToFreq) {
-                sizeToFreq.wait();
-                Thread thread = new Thread(() -> {
-                    while (!Thread.interrupted()) {
-                        Integer maxValueInMap = Collections.max(sizeToFreq.values());
-                        for (Map.Entry<Integer, Integer> entry : sizeToFreq.entrySet()) {
-                            if (entry.getValue() == maxValueInMap) {
-                                Integer key = entry.getKey();
-                                System.out.println("Текущий лидер среди частот: " + key);
-                            }
-                        }
-                    }
-                });
-                thread.start();
-                threads.add(thread);
             }
+        });
+        printer.start();
+
+        for (int i = 0; i < AMOUNT_OF_THREADS; i++) {
+            threadList.add(getThread());
         }
 
-        for (Thread thread : threads) {
+        for (Thread thread : threadList) {
+            thread.start();
+            Thread.sleep(1);
+        }
+
+        for (Thread thread : threadList) {
             thread.join();
-            thread.interrupt();
         }
 
+        printer.interrupt();
     }
 
     public static String generateRoute(String letters, int length) {
@@ -65,5 +46,31 @@ public class Main {
             route.append(letters.charAt(random.nextInt(letters.length())));
         }
         return route.toString();
+    }
+
+    public static void printLeader() {
+        Map.Entry<Integer, Integer> max = sizeToFreq
+                .entrySet()
+                .stream()
+                .max(Map.Entry.comparingByValue())
+                .get();
+        System.out.println("Текущий лидер " + max.getKey()
+                + " (встретилось " + max.getValue() + " раз)");
+    }
+
+    public static Thread getThread() {
+        return new Thread(() -> {
+            String route = generateRoute(LETTERS, ROUTE_LENGTH);
+            int frequency = (int) route.chars().filter(ch -> ch == 'R').count();
+
+            synchronized (sizeToFreq) {
+                if (sizeToFreq.containsKey(frequency)) {
+                    sizeToFreq.put(frequency, sizeToFreq.get(frequency) + 1);
+                } else {
+                    sizeToFreq.put(frequency, 1);
+                }
+                sizeToFreq.notify();
+            }
+        });
     }
 }

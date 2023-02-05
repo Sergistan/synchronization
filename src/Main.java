@@ -9,7 +9,6 @@ public class Main {
 
         for (int i = 0; i < countsOfThread; i++) {
             new Thread(() -> {
-                synchronized (sizeToFreq) {
                     String route = generateRoute("RLRFR", 100);
                     int charCount = 0;
                     char temp;
@@ -20,7 +19,7 @@ public class Main {
                         if (temp == 'R')
                             charCount++;
                     }
-
+                synchronized (sizeToFreq) {
                     if (!sizeToFreq.containsKey(charCount)) {
                         sizeToFreq.put(charCount, 1);
                     } else {
